@@ -215,3 +215,9 @@ tbody tr.winner { background: var(--primary-soft); }
 .modal[hidden] { display: none; }
 .modal-box { width: min(960px, 92vw); max-height: 88vh; overflow: auto; padding: 16px; border-radius: 10px; background: #fff; }
 .modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+
+.cell-enable { display: flex; align-items: center; gap: 5px; font-size: 12px; white-space: nowrap; cursor: pointer; }
+.key-wrap { display: flex; gap: 4px; }
+.key-wrap input { flex: 1; min-width: 0; }
+.key-eye { padding: 0 9px; border: 1px solid var(--line); border-radius: 6px; background: transparent; cursor: pointer; opacity: .6; }
+.key-eye.on { opacity: 1; }
