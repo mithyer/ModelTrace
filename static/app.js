@@ -142,13 +142,14 @@ function addCell(data = {}) {
   el.innerHTML = `
     <div class="api-cell-head">
       <input class="cell-name" placeholder="名称（必须唯一）" aria-label="测试名称">
+      <label class="cell-enable"><input type="checkbox" class="cell-active" checked><span>参与测试</span></label>
       <button type="button" class="button secondary cell-detail" disabled>测试详情</button>
       <button type="button" class="button secondary cell-remove" aria-label="删除">×</button>
     </div>
     <div class="form-grid two">
       <label><span>Base URL</span><input class="cell-base" placeholder="https://example.com/v1"></label>
       <label><span>接口模型名</span><input class="cell-model" placeholder="模型名"></label>
-      <label><span>API Key</span><input class="cell-key" type="password" autocomplete="off"></label>
+      <label><span>API Key</span><span class="key-wrap"><input class="cell-key" type="password" autocomplete="off"><button type="button" class="key-eye" aria-label="显示/隐藏 API Key" title="显示/隐藏">👁</button></span></label>
       <label><span>温度（可选）</span><input class="cell-temp" type="number" min="0" max="2" step="0.1" placeholder="接口默认"></label>
     </div>
     <div class="cell-progress progress-panel" hidden>
@@ -164,6 +165,14 @@ function addCell(data = {}) {
   q(".cell-model").value = data.model || "";
   q(".cell-key").value = data.key || "";
   q(".cell-temp").value = data.temp ?? "";
+  q(".cell-active").checked = data.active !== false;
+  q(".key-eye").addEventListener("click", (e) => {
+    e.preventDefault();
+    const input = q(".cell-key");
+    const show = input.type === "password";
+    input.type = show ? "text" : "password";
+    e.currentTarget.classList.toggle("on", show);
+  });
   q(".cell-name").addEventListener("input", markDuplicateNames);
   q(".cell-remove").addEventListener("click", () => {
     if (cell.running) return;
@@ -300,22 +309,23 @@ async function testAllCells() {
   setMessage(byId("test-message"), "");
   markDuplicateNames();
   const names = apiCells.map(cellName);
-  if (!apiCells.length) return setMessage(byId("test-message"), "请先添加测试单元。", "error");
+  const active = apiCells.filter((c) => c.el.querySelector(".cell-active").checked);
+  if (!active.length) return setMessage(byId("test-message"), "没有勾选「参与测试」的单元。", "error");
   if (names.some((n) => !n) || new Set(names).size !== names.length) {
     return setMessage(byId("test-message"), "每个测试单元必须有名称，且名称不能重复。", "error");
   }
-  const incomplete = apiCells.find((c) => ["base", "model", "key"].some((k) => !c.el.querySelector(`.cell-${k}`).value.trim()));
+  const incomplete = active.find((c) => ["base", "model", "key"].some((k) => !c.el.querySelector(`.cell-${k}`).value.trim()));
   if (incomplete) return setMessage(byId("test-message"), `「${cellName(incomplete)}」的 Base URL、模型名和 API Key 不能为空。`, "error");
   const button = byId("api-start");
   button.disabled = true;
-  await Promise.all(apiCells.map(runCell));
+  await Promise.all(active.map(runCell));
   button.disabled = false;
 }
 
 function saveCells() {
   const data = apiCells.map((c) => {
     const q = (selector) => c.el.querySelector(selector).value;
-    return { name: q(".cell-name"), base: q(".cell-base"), model: q(".cell-model"), key: q(".cell-key"), temp: q(".cell-temp"), result: c.result };
+    return { name: q(".cell-name"), base: q(".cell-base"), model: q(".cell-model"), key: q(".cell-key"), temp: q(".cell-temp"), active: c.el.querySelector(".cell-active").checked, result: c.result };
   });
   try {
     localStorage.setItem(CACHE_KEY, JSON.stringify(data));
